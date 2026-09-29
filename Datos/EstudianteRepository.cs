@@ -1,5 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
-using RegistroEstudiantes.Datos;
+using RegistroEstudiantes.Modelos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.ComponentModel.Design.ObjectSelectorEditor;
 
-namespace RegistroEstudiantes.Modelos
+namespace RegistroEstudiantes.Datos
 {
     public class EstudianteRepository
     {
@@ -29,7 +29,7 @@ namespace RegistroEstudiantes.Modelos
 
             e.IdCarrera,
             c.Nombre AS Carrera,
-
+            a.Nombre AS Area,
             e.IdMunicipio,
             m.Nombre AS Municipio,
             d.Nombre AS Departamento,
@@ -46,6 +46,9 @@ namespace RegistroEstudiantes.Modelos
 
         INNER JOIN Carreras c
             ON c.IdCarrera = e.IdCarrera
+
+        INNER JOIN AreasConocimiento a
+            ON a.IdArea = c.IdArea
 
         INNER JOIN Municipios m
             ON m.IdMunicipio = e.IdMunicipio
@@ -83,6 +86,19 @@ namespace RegistroEstudiantes.Modelos
 
             while (lector.Read())
             {
+                string nombreArea =
+    lector.GetString(
+        lector.GetOrdinal("Area"));
+
+                AreaConocimiento area;
+
+                if (!Enum.TryParse(
+                        nombreArea,
+                        true,
+                        out area))
+                {
+                    area = AreaConocimiento.Otra;
+                }
                 Estudiante estudiante = new()
                 {
                     Id = lector.GetGuid(
@@ -136,6 +152,8 @@ namespace RegistroEstudiantes.Modelos
                         lector.GetString(
                             lector.GetOrdinal(
                                 "Carrera")),
+
+                    AreaConocimiento = area,
 
                     IdMunicipio =
                         lector.GetInt32(
@@ -219,69 +237,215 @@ namespace RegistroEstudiantes.Modelos
         (@Id, @Carnet, @Cedula, @Nombres, @Apellidos, @Sexo, 
          @FechaNacimiento, @Nacionalidad, @NivelAcademico, @TieneTutor, 
          @IdCarrera, @IdMunicipio, @Etnia, @Correo, @Promedio, 
-         @TieneDiscapacidadFisica, @DescripcionDiscapacidad, @EsInterno, @Activo);"; 
- 
-    using SqlConnection conexion = ConexionBD.CrearConexion(); 
-    using SqlCommand comando = new(sql, conexion); 
- 
-    comando.Parameters.AddWithValue("@Id", e.Id); 
-    comando.Parameters.AddWithValue("@Carnet", e.Carnet); 
-    comando.Parameters.AddWithValue("@Cedula", string.IsNullOrWhiteSpace(e.Cedula) ? DBNull.Value : e.Cedula); 
-    comando.Parameters.AddWithValue("@Nombres", e.Nombres); 
-    comando.Parameters.AddWithValue("@Apellidos", e.Apellidos); 
-    comando.Parameters.AddWithValue("@Sexo", e.Sexo.ToString()); 
-    comando.Parameters.AddWithValue("@FechaNacimiento", e.FechaNacimiento.Date); 
-    comando.Parameters.AddWithValue("@Nacionalidad", e.Nacionalidad); 
-    comando.Parameters.AddWithValue("@NivelAcademico", e.NivelAcademico); 
-    comando.Parameters.AddWithValue("@TieneTutor", e.TieneTutor); 
-    comando.Parameters.AddWithValue("@IdCarrera", e.IdCarrera); 
-    comando.Parameters.AddWithValue("@IdMunicipio", e.IdMunicipio); 
-    comando.Parameters.AddWithValue("@Etnia", string.IsNullOrWhiteSpace(e.Etnia) ? DBNull.Value : e.Etnia); 
-    comando.Parameters.AddWithValue("@Correo", e.Correo); 
-    comando.Parameters.AddWithValue("@Promedio", e.Promedio); 
-    comando.Parameters.AddWithValue("@TieneDiscapacidadFisica", e.TieneDiscapacidadFisica); 
-    comando.Parameters.AddWithValue("@DescripcionDiscapacidad", 
-string.IsNullOrWhiteSpace(e.DescripcionDiscapacidad) ? DBNull.Value : e.DescripcionDiscapacidad); 
-    comando.Parameters.AddWithValue("@EsInterno", e.EsInterno); 
-    comando.Parameters.AddWithValue("@Activo", e.Activo); 
- 
-    conexion.Open(); 
-    comando.ExecuteNonQuery(); 
-      }
-        public List<Estudiante> Listar()
-        {
-            const string sql = @" 
-        SELECT e.Id, e.Carnet, e.Cedula, e.Nombres, e.Apellidos, e.Sexo, 
-               e.FechaNacimiento, e.Nacionalidad, e.NivelAcademico, e.TieneTutor, 
-               e.IdCarrera, c.Nombre AS Carrera, 
-               e.IdMunicipio, m.Nombre AS Municipio, d.Nombre AS Departamento, 
-               e.Etnia, e.Correo, e.Promedio, e.TieneDiscapacidadFisica, 
-               e.DescripcionDiscapacidad, e.EsInterno, e.Activo 
-        FROM Estudiantes e 
-        INNER JOIN Carreras c ON c.IdCarrera = e.IdCarrera 
-        INNER JOIN Municipios m ON m.IdMunicipio = e.IdMunicipio 
-        INNER JOIN Departamentos d ON d.IdDepartamento = m.IdDepartamento 
-        WHERE e.Activo = 1 
-        ORDER BY e.Apellidos, e.Nombres;";
+         @TieneDiscapacidadFisica, @DescripcionDiscapacidad, @EsInterno, @Activo);";
 
-            List<Estudiante> lista = new();
             using SqlConnection conexion = ConexionBD.CrearConexion();
             using SqlCommand comando = new(sql, conexion);
+
+            comando.Parameters.AddWithValue("@Id", e.Id);
+            comando.Parameters.AddWithValue("@Carnet", e.Carnet);
+            comando.Parameters.AddWithValue("@Cedula", string.IsNullOrWhiteSpace(e.Cedula) ? DBNull.Value : e.Cedula);
+            comando.Parameters.AddWithValue("@Nombres", e.Nombres);
+            comando.Parameters.AddWithValue("@Apellidos", e.Apellidos);
+            comando.Parameters.AddWithValue("@Sexo", e.Sexo.ToString());
+            comando.Parameters.AddWithValue("@FechaNacimiento", e.FechaNacimiento.Date);
+            comando.Parameters.AddWithValue("@Nacionalidad", e.Nacionalidad);
+            comando.Parameters.AddWithValue("@NivelAcademico", e.NivelAcademico);
+            comando.Parameters.AddWithValue("@TieneTutor", e.TieneTutor);
+            comando.Parameters.AddWithValue("@IdCarrera", e.IdCarrera);
+            comando.Parameters.AddWithValue("@IdMunicipio", e.IdMunicipio);
+            comando.Parameters.AddWithValue("@Etnia", string.IsNullOrWhiteSpace(e.Etnia) ? DBNull.Value : e.Etnia);
+            comando.Parameters.AddWithValue("@Correo", e.Correo);
+            comando.Parameters.AddWithValue("@Promedio", e.Promedio);
+            comando.Parameters.AddWithValue("@TieneDiscapacidadFisica", e.TieneDiscapacidadFisica);
+            comando.Parameters.AddWithValue("@DescripcionDiscapacidad",
+        string.IsNullOrWhiteSpace(e.DescripcionDiscapacidad) ? DBNull.Value : e.DescripcionDiscapacidad);
+            comando.Parameters.AddWithValue("@EsInterno", e.EsInterno);
+            comando.Parameters.AddWithValue("@Activo", e.Activo);
+
             conexion.Open();
-            using SqlDataReader lector = comando.ExecuteReader();
+            comando.ExecuteNonQuery();
+        }
+        public List<Estudiante> Listar()
+        {
+            const string sql = @"
+        SELECT
+            e.Id,
+            e.Carnet,
+            e.Cedula,
+            e.Nombres,
+            e.Apellidos,
+            e.Sexo,
+            e.FechaNacimiento,
+            e.Nacionalidad,
+            e.NivelAcademico,
+            e.TieneTutor,
+
+            e.IdCarrera,
+            c.Nombre AS Carrera,
+            a.Nombre AS Area,
+            e.IdMunicipio,
+            m.Nombre AS Municipio,
+            d.Nombre AS Departamento,
+
+            e.Etnia,
+            e.Correo,
+            e.Promedio,
+            e.TieneDiscapacidadFisica,
+            e.DescripcionDiscapacidad,
+            e.EsInterno,
+            e.Activo
+
+        FROM Estudiantes e
+
+        INNER JOIN Carreras c
+            ON c.IdCarrera = e.IdCarrera
+
+        INNER JOIN AreasConocimiento a
+            ON a.IdArea = c.IdArea
+
+        INNER JOIN Municipios m
+            ON m.IdMunicipio = e.IdMunicipio
+
+        INNER JOIN Departamentos d
+            ON d.IdDepartamento = m.IdDepartamento
+
+        WHERE e.Activo = 1
+
+        ORDER BY e.Apellidos, e.Nombres;
+    ";
+
+            List<Estudiante> lista = new();
+
+            using SqlConnection conexion =
+                ConexionBD.CrearConexion();
+
+            using SqlCommand comando =
+                new(sql, conexion);
+
+            conexion.Open();
+
+            using SqlDataReader lector =
+                comando.ExecuteReader();
 
             while (lector.Read())
             {
-                Estudiante e = new()
+                string nombreArea =
+    lector.GetString(
+        lector.GetOrdinal("Area"));
+
+                AreaConocimiento area;
+
+                if (!Enum.TryParse(
+                        nombreArea,
+                        true,
+                        out area))
                 {
-                    IdCarrera = lector.GetInt32(lector.GetOrdinal("IdCarrera")),
-                    Carrera = lector.GetString(lector.GetOrdinal("Carrera")),
-                    IdMunicipio = lector.GetInt32(lector.GetOrdinal("IdMunicipio")),
-                    Municipio = lector.GetString(lector.GetOrdinal("Municipio")),
-                    Departamento = lector.GetString(lector.GetOrdinal("Departamento"))
+                    area = AreaConocimiento.Otra;
+                }
+                Estudiante estudiante = new()
+                {
+                    Id = lector.GetGuid(
+                        lector.GetOrdinal("Id")),
+
+                    Carnet = lector.GetString(
+                        lector.GetOrdinal("Carnet")),
+
+                    Cedula = lector.IsDBNull(
+                        lector.GetOrdinal("Cedula"))
+                        ? string.Empty
+                        : lector.GetString(
+                            lector.GetOrdinal("Cedula")),
+
+                    Nombres = lector.GetString(
+                        lector.GetOrdinal("Nombres")),
+
+                    Apellidos = lector.GetString(
+                        lector.GetOrdinal("Apellidos")),
+
+                    Sexo = Enum.Parse<Sexo>(
+                        lector.GetString(
+                            lector.GetOrdinal("Sexo"))),
+
+                    FechaNacimiento =
+                        lector.GetDateTime(
+                            lector.GetOrdinal("FechaNacimiento")),
+
+                    Nacionalidad =
+                        lector.GetString(
+                            lector.GetOrdinal("Nacionalidad")),
+
+                    NivelAcademico =
+                        lector.GetString(
+                            lector.GetOrdinal("NivelAcademico")),
+
+                    TieneTutor =
+                        lector.GetBoolean(
+                            lector.GetOrdinal("TieneTutor")),
+
+                    IdCarrera =
+                        lector.GetInt32(
+                            lector.GetOrdinal("IdCarrera")),
+
+                    Carrera =
+                        lector.GetString(
+                            lector.GetOrdinal("Carrera")),
+
+
+                    IdMunicipio =
+                        lector.GetInt32(
+                            lector.GetOrdinal("IdMunicipio")),
+
+                    Municipio =
+                        lector.GetString(
+                            lector.GetOrdinal("Municipio")),
+
+                    AreaConocimiento = area,
+
+                    Departamento =
+                        lector.GetString(
+                            lector.GetOrdinal("Departamento")),
+
+                    Etnia = lector.IsDBNull(
+                        lector.GetOrdinal("Etnia"))
+                        ? string.Empty
+                        : lector.GetString(
+                            lector.GetOrdinal("Etnia")),
+
+                    Correo =
+                        lector.GetString(
+                            lector.GetOrdinal("Correo")),
+
+                    Promedio =
+                        lector.GetDecimal(
+                            lector.GetOrdinal("Promedio")),
+
+                    TieneDiscapacidadFisica =
+                        lector.GetBoolean(
+                            lector.GetOrdinal(
+                                "TieneDiscapacidadFisica")),
+
+                    DescripcionDiscapacidad =
+                        lector.IsDBNull(
+                            lector.GetOrdinal(
+                                "DescripcionDiscapacidad"))
+                        ? string.Empty
+                        : lector.GetString(
+                            lector.GetOrdinal(
+                                "DescripcionDiscapacidad")),
+
+                    EsInterno =
+                        lector.GetBoolean(
+                            lector.GetOrdinal("EsInterno")),
+
+                    Activo =
+                        lector.GetBoolean(
+                            lector.GetOrdinal("Activo"))
                 };
-                lista.Add(e);
+
+                lista.Add(estudiante);
             }
+
             return lista;
         }
         public void Actualizar(Estudiante estudiante)
@@ -435,5 +599,5 @@ string.IsNullOrWhiteSpace(e.DescripcionDiscapacidad) ? DBNull.Value : e.Descripc
 
 
     }
-        
+
 }

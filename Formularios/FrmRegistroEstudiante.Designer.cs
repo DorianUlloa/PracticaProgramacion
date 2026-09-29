@@ -404,14 +404,17 @@
             // 
             // cboDepartamento
             // 
+            cboDepartamento.DropDownStyle = ComboBoxStyle.DropDownList;
             cboDepartamento.FormattingEnabled = true;
             cboDepartamento.Location = new Point(308, 369);
             cboDepartamento.Name = "cboDepartamento";
             cboDepartamento.Size = new Size(185, 28);
             cboDepartamento.TabIndex = 29;
+            cboDepartamento.SelectedIndexChanged += cboDepartamento_SelectedIndexChanged;
             // 
             // cboMunicipio
             // 
+            cboMunicipio.DropDownStyle = ComboBoxStyle.DropDownList;
             cboMunicipio.FormattingEnabled = true;
             cboMunicipio.Location = new Point(308, 402);
             cboMunicipio.Name = "cboMunicipio";

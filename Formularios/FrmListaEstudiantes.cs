@@ -1,4 +1,6 @@
-﻿using RegistroEstudiantes.Modelos;
+﻿using Microsoft.Data.SqlClient;
+using RegistroEstudiantes.Datos;
+using RegistroEstudiantes.Modelos;
 using RegistroEstudiantes.ServiciosTemporales;
 using System;
 using System.Collections.Generic;
@@ -23,13 +25,24 @@ namespace RegistroEstudiantes.Formularios
 
         }
 
+
         private void CargarEstudiantes()
         {
-            dgvEstudiantes.DataSource = null;
+            dgvEstudiantes.AutoGenerateColumns = false;
 
+            Carnet.DataPropertyName = "Carnet";
+            Nombrecompleto.DataPropertyName = "NombreCompleto";
+            Sexo.DataPropertyName = "Sexo";
+            Carrera.DataPropertyName = "Carrera";
+            Nivel.DataPropertyName = "NivelAcademico";
+            Correo.DataPropertyName = "Correo";
+            Promedio.DataPropertyName = "Promedio";
+
+            dgvEstudiantes.DataSource = null;
             dgvEstudiantes.DataSource =
                 estudianteRepository.Listar();
         }
+
         private Estudiante? ObtenerSeleccionado()
         {
             return dgvEstudiantes.CurrentRow?.DataBoundItem as Estudiante;
@@ -53,38 +66,119 @@ namespace RegistroEstudiantes.Formularios
 
         private void btnBuscar_Click(object sender, EventArgs e)
         {
-            dgvEstudiantes.DataSource = null;
+            try
+            {
+                string texto = txtBuscar.Text.Trim();
 
-            dgvEstudiantes.DataSource =
-                estudianteRepository.Buscar(
-                    txtBuscar.Text);
+                // Si no escribió nada, mostrar nuevamente todos
+                if (string.IsNullOrWhiteSpace(texto))
+                {
+                    CargarEstudiantes();
+                    return;
+                }
+
+                List<Estudiante> resultados =
+                    estudianteRepository.Buscar(texto);
+
+                dgvEstudiantes.DataSource = null;
+                dgvEstudiantes.DataSource = resultados;
+
+                if (resultados.Count == 0)
+                {
+                    MessageBox.Show(
+                        "No se encontraron estudiantes con ese criterio.",
+                        "Búsqueda",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"No fue posible realizar la búsqueda.\n{ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         private void btnDesactivar_Click(object sender, EventArgs e)
         {
-            if (dgvEstudiantes.CurrentRow?.DataBoundItem
-       is not Estudiante estudiante)
+            Estudiante? estudiante = ObtenerSeleccionado();
+
+            if (estudiante == null)
             {
                 MessageBox.Show(
-                    "Seleccione un estudiante.");
+                    "Seleccione un estudiante para desactivar.",
+                    "Desactivar estudiante",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
 
                 return;
             }
 
-            DialogResult respuesta =
-                MessageBox.Show(
-                    $"¿Desea desactivar a {estudiante.NombreCompleto}?",
-                    "Confirmación",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
+            DialogResult respuesta = MessageBox.Show(
+                $"¿Está seguro de desactivar a {estudiante.NombreCompleto}?",
+                "Confirmar desactivación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
 
             if (respuesta != DialogResult.Yes)
                 return;
 
-            estudianteRepository.Desactivar(
-                estudiante.Id);
+            try
+            {
+                estudianteRepository.Desactivar(estudiante.Id);
 
+                MessageBox.Show(
+                    "Estudiante desactivado correctamente.",
+                    "Desactivación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                CargarEstudiantes();
+            }
+            catch (SqlException ex)
+            {
+                MessageBox.Show(
+                    $"Error de base de datos:\n{ex.Message}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnEditar_Click(object sender, EventArgs e)
+        {
+            Estudiante? estudiante = ObtenerSeleccionado();
+
+            if (estudiante == null)
+            {
+                MessageBox.Show(
+                    "Seleccione un estudiante para editar.",
+                    "Editar estudiante",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            using FrmRegistroEstudiante formulario =
+                new FrmRegistroEstudiante(estudiante);
+
+            formulario.ShowDialog(this);
+
+            // Refrescar la lista cuando se cierre
             CargarEstudiantes();
+
         }
     }
 }

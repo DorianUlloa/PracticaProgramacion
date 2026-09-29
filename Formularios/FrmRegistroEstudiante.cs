@@ -19,11 +19,24 @@ namespace RegistroEstudiantes.Formularios
         private readonly EstudianteRepository estudianteRepository = new();
         private readonly CatalogoRepository catalogoRepository = new();
         private Estudiante? estudianteEnEdicion;
-        public FrmRegistroEstudiante()  
+        public FrmRegistroEstudiante()
         {
             InitializeComponent();
-           
-            CargarCarreras();
+            CargarSexos();
+            CargarNacionalidades();
+            CargarNivelesAcademicos();
+
+            CargarAreas();
+            CargarDepartamentos();
+
+            cboCarrera.DataSource = null;
+            cboCarrera.Enabled = false;
+
+            cboMunicipio.DataSource = null;
+            cboMunicipio.Enabled = false;
+
+            txtDescripcionDiscapacidad.Enabled = false;
+
         }
 
         public FrmRegistroEstudiante(Estudiante estudiante) : this()
@@ -37,14 +50,63 @@ namespace RegistroEstudiantes.Formularios
             if (estudianteEnEdicion == null)
                 return;
 
-            txtCarnet.Text =
-                estudianteEnEdicion.Carnet;
+            // Datos personales
+            txtCarnet.Text = estudianteEnEdicion.Carnet;
+            txtCedula.Text = estudianteEnEdicion.Cedula;
+            txtNombres.Text = estudianteEnEdicion.Nombres;
+            txtApellidos.Text = estudianteEnEdicion.Apellidos;
 
-            txtNombres.Text =
-                estudianteEnEdicion.Nombres;
+            // Sexo
+            cboSexo.Text =
+                estudianteEnEdicion.Sexo.ToString();
 
-            txtApellidos.Text =
-                estudianteEnEdicion.Apellidos;
+            // Fecha de nacimiento
+            dtpFechaNacimiento.Value =
+                estudianteEnEdicion.FechaNacimiento;
+
+            // Datos académicos
+            cboNacionalidad.Text =
+                estudianteEnEdicion.Nacionalidad;
+
+            cboNivelAcademico.Text =
+                estudianteEnEdicion.NivelAcademico;
+
+            chkTieneTutor.Checked =
+                estudianteEnEdicion.TieneTutor;
+
+            int indiceArea =
+     cboArea.FindStringExact(
+         estudianteEnEdicion.AreaConocimiento.ToString());
+
+            if (indiceArea >= 0)
+            {
+                cboArea.SelectedIndex = indiceArea;
+            }
+            // Carrera
+            cboCarrera.SelectedValue =
+            estudianteEnEdicion.IdCarrera;
+
+            // Departamento
+            int indiceDepartamento =
+                cboDepartamento.FindStringExact(
+                    estudianteEnEdicion.Departamento);
+
+            if (indiceDepartamento >= 0)
+            {
+                cboDepartamento.SelectedIndex =
+                    indiceDepartamento;
+            }
+
+            // IMPORTANTE:
+            // al seleccionar Departamento se cargan
+            // automáticamente sus municipios.
+
+            cboMunicipio.SelectedValue =
+                estudianteEnEdicion.IdMunicipio;
+
+            // Otros datos
+            cboEtnia.Text =
+                estudianteEnEdicion.Etnia;
 
             txtCorreo.Text =
                 estudianteEnEdicion.Correo;
@@ -52,18 +114,82 @@ namespace RegistroEstudiantes.Formularios
             nudPromedio.Value =
                 estudianteEnEdicion.Promedio;
 
-            cboCarrera.SelectedValue =
-                estudianteEnEdicion.IdCarrera;
+            chkDiscapacidad.Checked =
+                estudianteEnEdicion.TieneDiscapacidadFisica;
 
-            cboMunicipio.SelectedValue =
-                estudianteEnEdicion.IdMunicipio;
+            txtDescripcionDiscapacidad.Text =
+                estudianteEnEdicion.DescripcionDiscapacidad;
 
-            // continuar con los demás controles
+            // El carnet no se modifica durante la edición
+            txtCarnet.ReadOnly = true;
+        }
+        private void CargarAreas()
+        {
+            List<OpcionCatalogo> areas =
+                catalogoRepository.ListarAreas();
+
+            cboArea.DataSource = null;
+
+            cboArea.DisplayMember = "Nombre";
+            cboArea.ValueMember = "Id";
+            cboArea.DataSource = areas;
+
+            cboArea.SelectedIndex = -1;
+        }
+        private void CargarNivelesAcademicos()
+        {
+            cboNivelAcademico.Items.Clear();
+
+            cboNivelAcademico.Items.AddRange(new object[]
+            {
+        "Secundaria",
+        "Técnico",
+        "Universitario",
+        "Egresado",
+        "Posgrado"
+            });
+
+            cboNivelAcademico.SelectedIndex = -1;
+            cboNivelAcademico.DropDownStyle =
+                ComboBoxStyle.DropDownList;
+        }
+        private void CargarNacionalidades()
+        {
+            cboNacionalidad.Items.Clear();
+
+            cboNacionalidad.Items.AddRange(new object[]
+            {
+        "Nicaragüense",
+        "Costarricense",
+        "Hondureña",
+        "Salvadoreña",
+        "Guatemalteca",
+        "Panameña",
+        "Otra"
+            });
+
+            cboNacionalidad.DropDownStyle =
+                ComboBoxStyle.DropDown;
+
+            cboNacionalidad.AutoCompleteMode =
+                AutoCompleteMode.SuggestAppend;
+
+            cboNacionalidad.AutoCompleteSource =
+                AutoCompleteSource.ListItems;
+
+            cboNacionalidad.SelectedIndex = -1;
+        }
+        private void CargarSexos()
+        {
+            cboSexo.DataSource = Enum.GetValues<Sexo>();
+            cboSexo.SelectedIndex = -1;
+            cboSexo.DropDownStyle = ComboBoxStyle.DropDownList;
         }
 
-        private void CargarCarreras()
+        private void CargarCarreras(int idArea)
         {
-            List<OpcionCatalogo> carreras = catalogoRepository.ListarCarreras();
+            List<OpcionCatalogo> carreras =
+                catalogoRepository.ListarCarreras(idArea);
 
             cboCarrera.DataSource = null;
 
@@ -72,67 +198,230 @@ namespace RegistroEstudiantes.Formularios
             cboCarrera.DataSource = carreras;
 
             cboCarrera.SelectedIndex = -1;
+
+            cboCarrera.Enabled =
+                carreras.Count > 0;
+        }
+        private void CargarDepartamentos()
+        {
+            List<OpcionCatalogo> departamentos =
+                catalogoRepository.ListarDepartamentos();
+
+            cboDepartamento.DataSource = null;
+
+            cboDepartamento.DisplayMember = "Nombre";
+            cboDepartamento.ValueMember = "Id";
+            cboDepartamento.DataSource = departamentos;
+
+            cboDepartamento.SelectedIndex = -1;
+        }
+
+        private void CargarMunicipios(int idDepartamento)
+        {
+            List<OpcionCatalogo> municipios =
+                catalogoRepository.ListarMunicipios(idDepartamento);
+
+            cboMunicipio.DataSource = null;
+
+            cboMunicipio.DisplayMember = "Nombre";
+            cboMunicipio.ValueMember = "Id";
+            cboMunicipio.DataSource = municipios;
+
+            cboMunicipio.SelectedIndex = -1;
+
+            cboMunicipio.Enabled = municipios.Count > 0;
         }
 
         private Estudiante ConstruirEstudianteDesdeFormulario()
         {
-            Sexo sexo = Enum.TryParse(
-                cboSexo.SelectedItem?.ToString(),
-                out Sexo sexoSeleccionado)
-                ? sexoSeleccionado
-                : Sexo.M;
+            Sexo sexo =
+                (Sexo)cboSexo.SelectedItem!;
 
-            AreaConocimiento area = Enum.TryParse(
-                cboArea.SelectedItem?.ToString(),
-                out AreaConocimiento areaSeleccionada)
-                ? areaSeleccionada
-                : AreaConocimiento.Otra;
+            AreaConocimiento area =
+                Enum.Parse<AreaConocimiento>(
+                    cboArea.Text,
+                    true);
+
+            int idCarrera =
+                Convert.ToInt32(
+                    cboCarrera.SelectedValue);
+
+            int idMunicipio =
+                Convert.ToInt32(
+                    cboMunicipio.SelectedValue);
 
             return new Estudiante
             {
-                Carnet = txtCarnet.Text,
+                Carnet = txtCarnet.Text.Trim(),
                 Cedula = txtCedula.Text.Trim(),
-                Nombres = txtNombres.Text,
-                Apellidos = txtApellidos.Text,
+
+                Nombres = txtNombres.Text.Trim(),
+                Apellidos = txtApellidos.Text.Trim(),
+
                 Sexo = sexo,
-                FechaNacimiento = dtpFechaNacimiento.Value.Date,
-                Nacionalidad = cboNacionalidad.Text.Trim(),
-                NivelAcademico = cboNivelAcademico.Text.Trim(),
-                TieneTutor = chkTieneTutor.Checked,
+
+                FechaNacimiento =
+                    dtpFechaNacimiento.Value.Date,
+
+                Nacionalidad =
+                    cboNacionalidad.Text.Trim(),
+
+                NivelAcademico =
+                    cboNivelAcademico.Text.Trim(),
+
+                TieneTutor =
+                    chkTieneTutor.Checked,
+
                 AreaConocimiento = area,
 
-                IdCarrera = cboCarrera.SelectedValue is int idCarrera
-                    ? idCarrera
-                    : 0,
-
+                IdCarrera = idCarrera,
                 Carrera = cboCarrera.Text.Trim(),
 
-                Departamento = cboDepartamento.Text.Trim(),
-                IdMunicipio = cboMunicipio.SelectedValue is int idMunicipio ? idMunicipio: 0,
-                Municipio = cboMunicipio.Text.Trim(),
-                Etnia = cboEtnia.Text.Trim(),
-                Correo = txtCorreo.Text.Trim(),
-                Promedio = nudPromedio.Value,
-                TieneDiscapacidadFisica = chkDiscapacidad.Checked,
+                Departamento =
+                    cboDepartamento.Text.Trim(),
+
+                IdMunicipio = idMunicipio,
+                Municipio =
+                    cboMunicipio.Text.Trim(),
+
+                Etnia =
+                    cboEtnia.Text.Trim(),
+
+                Correo =
+                    txtCorreo.Text.Trim(),
+
+                Promedio =
+                    nudPromedio.Value,
+
+                TieneDiscapacidadFisica =
+                    chkDiscapacidad.Checked,
+
                 DescripcionDiscapacidad =
                     txtDescripcionDiscapacidad.Text.Trim()
             };
         }
-        private bool ValidarFormulario(Estudiante estudiante)
+        private bool ValidarFormulario(
+     Estudiante estudiante)
         {
-            errorProvider1.Clear();
-            List<string> errores = ValidadorEstudiante.Validar(estudiante);
-
-            if (string.IsNullOrWhiteSpace(estudiante.Carnet))
-                errorProvider1.SetError(txtCarnet, "Ingrese el carnet.");
-
-            if (string.IsNullOrWhiteSpace(estudiante.Nombres))
-                errorProvider1.SetError(txtNombres, "Ingrese los nombres.");
+            List<string> errores =
+                ValidadorEstudiante.Validar(estudiante);
 
             if (errores.Count == 0)
                 return true;
 
-            MessageBox.Show(string.Join(Environment.NewLine, errores),
+            MessageBox.Show(
+                string.Join(
+                    Environment.NewLine,
+                    errores),
+                "Revise la información",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+
+            return false;
+        }
+
+        private bool ValidarControlesFormulario()
+        {
+            errorProvider1.Clear();
+
+            List<string> errores = new();
+
+            if (string.IsNullOrWhiteSpace(txtCarnet.Text))
+            {
+                errorProvider1.SetError(
+                    txtCarnet,
+                    "Ingrese el carnet.");
+
+                errores.Add("Debe ingresar el carnet.");
+            }
+
+            if (string.IsNullOrWhiteSpace(txtNombres.Text))
+            {
+                errorProvider1.SetError(
+                    txtNombres,
+                    "Ingrese los nombres.");
+
+                errores.Add("Debe ingresar los nombres.");
+            }
+
+            if (string.IsNullOrWhiteSpace(txtApellidos.Text))
+            {
+                errorProvider1.SetError(
+                    txtApellidos,
+                    "Ingrese los apellidos.");
+
+                errores.Add("Debe ingresar los apellidos.");
+            }
+
+            if (cboSexo.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboSexo,
+                    "Seleccione el sexo.");
+
+                errores.Add("Debe seleccionar el sexo.");
+            }
+
+            if (string.IsNullOrWhiteSpace(cboNacionalidad.Text))
+            {
+                errorProvider1.SetError(
+                    cboNacionalidad,
+                    "Ingrese o seleccione la nacionalidad.");
+
+                errores.Add("Debe indicar la nacionalidad.");
+            }
+
+            if (cboNivelAcademico.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboNivelAcademico,
+                    "Seleccione el nivel académico.");
+
+                errores.Add("Debe seleccionar el nivel académico.");
+            }
+
+            if (cboArea.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboArea,
+                    "Seleccione un área.");
+
+                errores.Add(
+                    "Debe seleccionar un área de conocimiento.");
+            }
+
+            if (cboCarrera.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboCarrera,
+                    "Seleccione una carrera.");
+
+                errores.Add("Debe seleccionar una carrera.");
+            }
+
+            if (cboDepartamento.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboDepartamento,
+                    "Seleccione un departamento.");
+
+                errores.Add("Debe seleccionar un departamento.");
+            }
+
+            if (cboMunicipio.SelectedIndex == -1)
+            {
+                errorProvider1.SetError(
+                    cboMunicipio,
+                    "Seleccione un municipio.");
+
+                errores.Add("Debe seleccionar un municipio.");
+            }
+
+            if (errores.Count == 0)
+                return true;
+
+            MessageBox.Show(
+                string.Join(Environment.NewLine, errores),
                 "Revise la información",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -155,24 +444,32 @@ namespace RegistroEstudiantes.Formularios
 
         private void cboArea_SelectedIndexChanged(object sender, EventArgs e)
         {
-            CargarCarreras();
+            if (cboArea.SelectedValue is int idArea)
+            {
+                CargarCarreras(idArea);
+            }
+            else
+            {
+                cboCarrera.DataSource = null;
+                cboCarrera.Enabled = false;
+            }
         }
 
         private void btnGuardar_Click(object sender, EventArgs e)
         {
 
-           
+
             try
             {
+                // 1. Validar los controles
+                if (!ValidarControlesFormulario())
+                    return;
+
+                // 2. Construir el objeto
                 Estudiante estudiante =
                     ConstruirEstudianteDesdeFormulario();
-                MessageBox.Show(
-      $"Municipio: {cboMunicipio.Text}\n" +
-      $"SelectedIndex: {cboMunicipio.SelectedIndex}\n" +
-      $"SelectedValue: {cboMunicipio.SelectedValue}\n" +
-      $"IdMunicipio del estudiante: {estudiante.IdMunicipio}",
-      "Prueba Municipio");
 
+                // 3. Validar las reglas del modelo
                 if (!ValidarFormulario(estudiante))
                     return;
 
@@ -189,7 +486,8 @@ namespace RegistroEstudiantes.Formularios
                         return;
                     }
 
-                    estudianteRepository.Insertar(estudiante);
+                    estudianteRepository.Insertar(
+                        estudiante);
 
                     MessageBox.Show(
                         "Estudiante guardado correctamente.",
@@ -199,11 +497,16 @@ namespace RegistroEstudiantes.Formularios
 
                     LimpiarFormulario();
                 }
-                // ESTUDIANTE EN EDICIÓN
                 else
                 {
                     estudiante.Id =
                         estudianteEnEdicion.Id;
+
+                    estudiante.EsInterno =
+                        estudianteEnEdicion.EsInterno;
+
+                    estudiante.Activo =
+                        estudianteEnEdicion.Activo;
 
                     estudianteRepository.Actualizar(
                         estudiante);
@@ -237,26 +540,73 @@ namespace RegistroEstudiantes.Formularios
 
         private void LimpiarFormulario()
         {
+            // Datos personales
             txtCarnet.Clear();
             txtCedula.Clear();
             txtNombres.Clear();
             txtApellidos.Clear();
+
             cboSexo.SelectedIndex = -1;
+
+            dtpFechaNacimiento.Value =
+                DateTime.Today.AddYears(-18);
+
+            // Nacionalidad
             cboNacionalidad.SelectedIndex = -1;
+            cboNacionalidad.Text = string.Empty;
+
+            // Nivel académico
             cboNivelAcademico.SelectedIndex = -1;
+
+            // Tutor
             chkTieneTutor.Checked = false;
+
+            // Área y Carrera
             cboArea.SelectedIndex = -1;
-            cboCarrera.SelectedIndex = -1;
+
+            cboCarrera.DataSource = null;
+            cboCarrera.Enabled = false;
+
+            // Departamento y Municipio
             cboDepartamento.SelectedIndex = -1;
-            cboMunicipio.SelectedIndex = -1;
+
+            cboMunicipio.DataSource = null;
+            cboMunicipio.Enabled = false;
+
+            // Etnia
             cboEtnia.SelectedIndex = -1;
+            cboEtnia.Text = string.Empty;
+
+            // Datos adicionales
             txtCorreo.Clear();
-            nudPromedio.Value = nudPromedio.Minimum;
+
+            nudPromedio.Value =
+                nudPromedio.Minimum;
+
             chkDiscapacidad.Checked = false;
+
             txtDescripcionDiscapacidad.Clear();
-            dtpFechaNacimiento.Value = DateTime.Today.AddYears(-18);
+            txtDescripcionDiscapacidad.Enabled = false;
+
+            // Validaciones
             errorProvider1.Clear();
+
+            // Por seguridad, si el método se reutiliza
+            txtCarnet.ReadOnly = false;
+
             txtCarnet.Focus();
+        }
+
+        private void cboDepartamento_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cboDepartamento.SelectedValue is int idDepartamento)
+            {
+                CargarMunicipios(idDepartamento);
+            }
+            else
+            {
+                cboMunicipio.DataSource = null;
+            }
         }
     }
 }

@@ -35,14 +35,12 @@
             btnHamburgues = new Button();
             pnlEncabezado = new Panel();
             pnlContenido = new Panel();
-            button1 = new Button();
             pnlMenu.SuspendLayout();
             SuspendLayout();
             // 
             // pnlMenu
             // 
             pnlMenu.BackColor = SystemColors.AppWorkspace;
-            pnlMenu.Controls.Add(button1);
             pnlMenu.Controls.Add(btnSalir);
             pnlMenu.Controls.Add(btnLista);
             pnlMenu.Controls.Add(btnEstudiantes);
@@ -116,16 +114,6 @@
             pnlContenido.Size = new Size(662, 498);
             pnlContenido.TabIndex = 2;
             // 
-            // button1
-            // 
-            button1.Location = new Point(40, 236);
-            button1.Name = "button1";
-            button1.Size = new Size(94, 29);
-            button1.TabIndex = 4;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
-            // 
             // FrmPrincipal
             // 
             AutoScaleDimensions = new SizeF(120F, 120F);
@@ -152,6 +140,5 @@
         private Panel pnlEncabezado;
         private Panel pnlContenido;
         private Button btnSalir;
-        private Button button1;
     }
 }

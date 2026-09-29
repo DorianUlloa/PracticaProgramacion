@@ -68,18 +68,6 @@ namespace RegistroEstudiantes
             AbrirFormulario(new FrmListaEstudiantes());
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                using SqlConnection conexion = ConexionBD.CrearConexion();
-                conexion.Open();
-                MessageBox.Show("Conexión correcta con SQL Server.");
-            }
-            catch (SqlException ex)
-            {
-                MessageBox.Show($"No fue posible conectar.\n{ex.Message}");
-            }
-        }
+        
     }
 }
