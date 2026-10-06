@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Folder Include="ControlesPersonalizados\" />
+    <Folder Include="Prueba_2\" />
   </ItemGroup>
 
   <ItemGroup>
